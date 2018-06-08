@@ -1,3 +1,0 @@
-evalFunc <- function(chromosome) {
-  
-}
