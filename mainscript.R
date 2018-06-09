@@ -2,6 +2,9 @@ if (! "genalg" %in% row.names(installed.packages()))
   install.packages("genalg")
 if (! "party" %in% row.names(installed.packages()))
   install.packages("party")
+if (! "e1071" %in% row.names(installed.packages()))
+  install.packages("e1071") # for svm classifier
+library(e1071)  # for svm classifier
 library(genalg)
 library(party)
 
@@ -12,12 +15,18 @@ evaluationTestDataSet = iris[,1:4]
 evaluationTestLabels = as.integer(iris$Species)
 uniqueLabels = levels(iris$Species)
 
-numberOfClassifiersInEnsemble = 10
+
+numberOfDecisionTreesInEnsemble = 6
+numberOfSVMInEnsemble = 4
+numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble
 numberOfTrainingDataPoints = length(evaluationTestLabels)
 # Dla kazdego punktu trenujacego tworzymy liste, w ktorej pola odpowiadaja klasyfikatorom i okreslaja
 # czy dany klasyfikator uzywa 
 sizeOfChromosome = numberOfClassifiersInEnsemble*numberOfTrainingDataPoints
 
+# "1" identify decision tree classifier and "2" SVM 
+# creation of table containing classifier types ID in ensemble
+classifierTypes <- c(rep(1, length.out = numberOfDecisionTreesInEnsemble), rep(2, length.out = numberOfSVMInEnsemble))
 
 #Stworzenie pustej listy dla klasyfikatorów
 classifiers <- vector("list", numberOfClassifiersInEnsemble)
@@ -29,8 +38,13 @@ evaluate <- function(chromosome=c()) {
     endChromosomeIndex = startChromosomeIndex + numberOfTrainingDataPoints -1;
     # Dla kazdego klasyfikatora wybieramy podzbior danych treningowych za pomoca 0 i 1 w chromosomie
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
-    # Tworzenie drzewa na danym podzbiorze i zapis do listy (<<- to operator przypisania do globalnego obiektu)
-    classifiers[[i]] <<- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+    # Tworzenie odpowiedniego klasyfikatora na danym podzbiorze i zapis do listy (<<- to operator przypisania do globalnego obiektu)
+    if(classifierTypes[i] == 1){
+      classifiers[[i]] <<- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+    }
+    else if(classifierTypes[i] == 2){
+      classifiers[[i]] <<- svm(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+    }
     # Predykcja na zbiorze ewaluacyjnym
     ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
   }
