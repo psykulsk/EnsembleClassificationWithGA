@@ -4,12 +4,10 @@ if (! "party" %in% row.names(installed.packages()))
   install.packages("party")
 if (! "e1071" %in% row.names(installed.packages()))
   install.packages("e1071") # pakiet zawierajacy klasyfikator svm
-if (! "caret" %in% row.names(installed.packages()))
-  install.packages("caret") # pakiet zawierajacy confusionMatrix
 library(e1071)  # pakiet zawierajacy klasyfikator svm
 library(genalg)
 library(party)
-library(caret)
+source("./createConfMatrixAndParams.R")
 
 data("iris")
 
@@ -86,9 +84,9 @@ evaluate <- function(chromosome=c()) {
   nrOfCorrectPredictions = sum(votingResults == evaluationTestLabels)
   nrOfWrongPredictions = length(evaluationTestLabels) - nrOfCorrectPredictions
   
-  confMatrixResult = confusionMatrix(as.factor(votingResults), as.factor(evaluationTestLabels))
+  confMatrixResult = createConfMatrixAndParams(predicted = votingResults, actual = evaluationTestLabels, length(uniqueLabels) )
   
-  return(1-confMatrixResult$overall[["Accuracy"]])
+  return(1-confMatrixResult$macroF1)
 }
 
 monitor <- function(obj) {
@@ -123,5 +121,5 @@ for(i in 1:length(finalEvalTestLabels)){
   #print(sort(table(ensemblePredictionResults[,i])))
 }
 
-confMatrixResult = confusionMatrix(as.factor(votingResults), as.factor(finalEvalTestLabels))
+confMatrixResult = createConfMatrixAndParams(predicted = votingResults, actual = finalEvalTestLabels, length(uniqueLabels))
 print(confMatrixResult)
