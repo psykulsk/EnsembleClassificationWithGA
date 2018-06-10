@@ -20,7 +20,7 @@ titanicTrainDataSet <- read.csv("train.csv")
 dataSet <- cbind(titanicTrainDataSet[,1:5],titanicTrainDataSet[,7:12])
 
 #dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
-dataSetFormula <- as.formula("Survived ~ .")
+dataSetFormula <- as.formula("Survived ~ Pclass + Sex + SibSp + Parch + Ticket + Fare + Cabin + Embarked")
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
