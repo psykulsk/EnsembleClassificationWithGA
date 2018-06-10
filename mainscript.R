@@ -38,15 +38,25 @@ evaluate <- function(chromosome=c()) {
     endChromosomeIndex = startChromosomeIndex + numberOfTrainingDataPoints -1;
     # Dla kazdego klasyfikatora wybieramy podzbior danych treningowych za pomoca 0 i 1 w chromosomie
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
-    # Tworzenie odpowiedniego klasyfikatora na danym podzbiorze i zapis do listy (<<- to operator przypisania do globalnego obiektu)
-    if(classifierTypes[i] == 1){
-      classifiers[[i]] <<- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+    
+    # Jezeli wektor jest jednolity co do klasy (zawiera przyklady jendej klasy) to pomijamy trening
+    if(all(diff(as.integer(trainingSubset$Species)) == 0)){
+    
+      ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
+    
     }
-    else if(classifierTypes[i] == 2){
-      classifiers[[i]] <<- svm(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+    else{
+      
+      # Tworzenie odpowiedniego klasyfikatora na danym podzbiorze i zapis do listy (<<- to operator przypisania do globalnego obiektu)
+      if(classifierTypes[i] == 1){
+        classifiers[[i]] <<- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+      }
+      else if(classifierTypes[i] == 2){
+        classifiers[[i]] <<- svm(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+      }
+      # Predykcja na zbiorze ewaluacyjnym
+      ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
     }
-    # Predykcja na zbiorze ewaluacyjnym
-    ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
   }
   # Głosowanie
   for(i in 1:length(evaluationTestLabels)){
