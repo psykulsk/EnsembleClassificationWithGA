@@ -3,18 +3,27 @@ if (! "genalg" %in% row.names(installed.packages()))
 if (! "party" %in% row.names(installed.packages()))
   install.packages("party")
 if (! "e1071" %in% row.names(installed.packages()))
-  install.packages("e1071") # for svm classifier
-library(e1071)  # for svm classifier
+  install.packages("e1071") # pakiet zawierajacy klasyfikator svm
+library(e1071)  # pakiet zawierajacy klasyfikator svm
 library(genalg)
 library(party)
 
 data("iris")
-trainingDataSet = iris
-# Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-evaluationTestDataSet = iris[,1:4]
-evaluationTestLabels = as.integer(iris$Species)
-uniqueLabels = levels(iris$Species)
 
+dataSet <- iris
+
+# utworzenie indeksow do rozdzialu danych trenujacych i testowych
+# w chwili obecnej dane treningowe to 80% wszystkich danych
+index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
+
+# wybor danych treningowych i testowych
+trainingDataSet = dataSet[index,]
+testDataSet = dataSet[-index,]
+
+# Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
+evaluationTestDataSet = trainingDataSet[,1:4]
+evaluationTestLabels = as.integer(trainingDataSet$Species)
+uniqueLabels = levels(trainingDataSet$Species)
 
 numberOfDecisionTreesInEnsemble = 6
 numberOfSVMInEnsemble = 4
