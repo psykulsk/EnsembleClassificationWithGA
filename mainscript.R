@@ -4,9 +4,12 @@ if (! "party" %in% row.names(installed.packages()))
   install.packages("party")
 if (! "e1071" %in% row.names(installed.packages()))
   install.packages("e1071") # pakiet zawierajacy klasyfikator svm
+if (! "caret" %in% row.names(installed.packages()))
+  install.packages("caret") # pakiet zawierajacy confusionMatrix
 library(e1071)  # pakiet zawierajacy klasyfikator svm
 library(genalg)
 library(party)
+library(caret)
 
 data("iris")
 
