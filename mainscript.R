@@ -13,28 +13,33 @@ library(caret)
 
 data("iris")
 
-dataSet <- iris
+irisDataSet <- iris
 
-dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+cardDataSet <- read.csv("creditcard.csv")
+
+dataSet <- cardDataSet
+
+#dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+dataSetFormula <- as.formula("Class ~ V1 + V2 + V3 + V4")
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
-index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
+index <- sort(sample(1:nrow(dataSet),round(0.2*nrow(dataSet))))
 
 # wybor danych treningowych i testowych
 trainingDataSet = dataSet[index,]
 testDataSet = dataSet[-index,]
 
 # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-evaluationTestDataSet = trainingDataSet[,1:4]
-evaluationTestLabels = as.integer(trainingDataSet$Species)
-uniqueLabels = levels(trainingDataSet$Species)
+evaluationTestDataSet = trainingDataSet[,2:5]
+evaluationTestLabels = as.integer(trainingDataSet$Class)
+uniqueLabels = levels(trainingDataSet$Class)
 
-finalEvalDataSet = testDataSet[,1:4]
-finalEvalTestLabels = as.integer(testDataSet$Species)
+finalEvalDataSet = testDataSet[,2:5]
+finalEvalTestLabels = as.integer(testDataSet$Class)
 
-numberOfDecisionTreesInEnsemble = 6
-numberOfSVMInEnsemble = 4
+numberOfDecisionTreesInEnsemble = 1
+numberOfSVMInEnsemble = 1
 numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble
 numberOfTrainingDataPoints = length(evaluationTestLabels)
 # Dla kazdego punktu trenujacego tworzymy liste, w ktorej pola odpowiadaja klasyfikatorom i okreslaja
@@ -57,7 +62,7 @@ evaluate <- function(chromosome=c()) {
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
     
     # Jezeli wektor jest jednolity co do klasy (zawiera przyklady jendej klasy) to pomijamy trening
-    if(all(diff(as.integer(trainingSubset$Species)) == 0)){
+    if(all(diff(as.integer(trainingSubset$Class)) == 0)){
     
       ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
     
