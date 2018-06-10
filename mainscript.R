@@ -12,6 +12,8 @@ data("iris")
 
 dataSet <- iris
 
+dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
 index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
@@ -61,10 +63,10 @@ evaluate <- function(chromosome=c()) {
       
       # Tworzenie odpowiedniego klasyfikatora na danym podzbiorze i zapis do listy (<<- to operator przypisania do globalnego obiektu)
       if(classifierTypes[i] == 1){
-        classifiers[[i]] <<- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+        classifiers[[i]] <<- ctree(dataSetFormula, data=trainingSubset)
       }
       else if(classifierTypes[i] == 2){
-        classifiers[[i]] <<- svm(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=trainingSubset)
+        classifiers[[i]] <<- svm(dataSetFormula, data=trainingSubset)
       }
       # Predykcja na zbiorze ewaluacyjnym
       ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
@@ -96,8 +98,11 @@ s = sample(rep(c(1),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDat
 #testresult = evaluate(s)
 
 GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 50, mutationChance = 0.01, 
-                   elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE)
-
+                   elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE, showSettings = TRUE)
+# Wybranie najlepszego chromosomu
+bestChromosome <- GAmodel$population[which.min(GAmodel$evaluations),]
+# Budowa klasyfikatorów na jego podstawie
+evaluate(bestChromosome)
 # Ocena otrzymanej grupy klasyfikatórów zbiorze testowym
 ensemblePredictionResults <- matrix(data=NA, nrow=numberOfClassifiersInEnsemble, ncol=length(finalEvalTestLabels))
 votingResults <- vector("integer", length = length(finalEvalTestLabels))
