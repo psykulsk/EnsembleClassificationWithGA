@@ -15,31 +15,31 @@ data("iris")
 
 irisDataSet <- iris
 
-cardDataSet <- read.csv("creditcard.csv")
+titanicTrainDataSet <- read.csv("train.csv")
 
-dataSet <- cardDataSet
+dataSet <- cbind(titanicTrainDataSet[,1:5],titanicTrainDataSet[,7:12])
 
 #dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
-dataSetFormula <- as.formula("Class ~ V1 + V2 + V3 + V4")
+dataSetFormula <- as.formula("Survived ~ .")
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
-index <- sort(sample(1:nrow(dataSet),round(0.2*nrow(dataSet))))
+index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
 
 # wybor danych treningowych i testowych
 trainingDataSet = dataSet[index,]
 testDataSet = dataSet[-index,]
 
 # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-evaluationTestDataSet = trainingDataSet[,2:5]
-evaluationTestLabels = as.integer(trainingDataSet$Class)
-uniqueLabels = levels(trainingDataSet$Class)
+evaluationTestDataSet = trainingDataSet[,1:11]
+evaluationTestLabels = as.integer(trainingDataSet$Survived)
+uniqueLabels = levels(trainingDataSet$Survived)
 
-finalEvalDataSet = testDataSet[,2:5]
-finalEvalTestLabels = as.integer(testDataSet$Class)
+finalEvalDataSet = trainingDataSet
+finalEvalTestLabels = as.integer(trainingDataSet$Survived)
 
-numberOfDecisionTreesInEnsemble = 1
-numberOfSVMInEnsemble = 1
+numberOfDecisionTreesInEnsemble = 4
+numberOfSVMInEnsemble = 4
 numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble
 numberOfTrainingDataPoints = length(evaluationTestLabels)
 # Dla kazdego punktu trenujacego tworzymy liste, w ktorej pola odpowiadaja klasyfikatorom i okreslaja
@@ -62,7 +62,7 @@ evaluate <- function(chromosome=c()) {
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
     
     # Jezeli wektor jest jednolity co do klasy (zawiera przyklady jendej klasy) to pomijamy trening
-    if(all(diff(as.integer(trainingSubset$Class)) == 0)){
+    if(all(diff(as.integer(trainingSubset$Survived)) == 0)){
     
       ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
     
@@ -77,6 +77,7 @@ evaluate <- function(chromosome=c()) {
         classifiers[[i]] <<- svm(dataSetFormula, data=trainingSubset)
       }
       # Predykcja na zbiorze ewaluacyjnym
+
       ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
     }
   }
@@ -107,7 +108,7 @@ monitor <- function(obj) {
 # uruchomienie funkcji na testowym chromosomie
 #testresult = evaluate(s)
 
-GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 5, mutationChance = 0.01, 
+GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 50, iters = 5, mutationChance = 0.01, 
                    elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE, showSettings = TRUE)
 
 # Wybranie najlepszego chromosomu
