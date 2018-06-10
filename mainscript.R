@@ -25,6 +25,9 @@ evaluationTestDataSet = trainingDataSet[,1:4]
 evaluationTestLabels = as.integer(trainingDataSet$Species)
 uniqueLabels = levels(trainingDataSet$Species)
 
+finalEvalDataSet = testDataSet[,1:4]
+finalEvalTestLabels = as.integer(testDataSet$Species)
+
 numberOfDecisionTreesInEnsemble = 6
 numberOfSVMInEnsemble = 4
 numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble
@@ -95,4 +98,20 @@ s = sample(rep(c(1),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDat
 GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 50, mutationChance = 0.01, 
                    elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE)
 
+# Ocena otrzymanej grupy klasyfikatórów zbiorze testowym
+ensemblePredictionResults <- matrix(data=NA, nrow=numberOfClassifiersInEnsemble, ncol=length(finalEvalTestLabels))
+votingResults <- vector("integer", length = length(finalEvalTestLabels))
+for(i in 1:numberOfClassifiersInEnsemble){
+  ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=finalEvalDataSet)
+}
+# Głosowanie
+for(i in 1:length(finalEvalTestLabels)){
+  # sort(table(ensemblePredictionResults[,i]), decreasing = TRUE) zwraca po kolei najczescie wystepujace elementy
+  # Bierzemy pierwszy element i uzywajac names() wyciagamy z niego etykiete
+  votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
+  #print(sort(table(ensemblePredictionResults[,i])))
+}
 
+nrOfCorrectPredictions = sum(votingResults == finalEvalTestLabels)
+nrOfWrongPredictions = length(finalEvalTestLabels) - nrOfCorrectPredictions
+sprintf("Procent błędów po końcowej ewaluacji na zbiorze testowym: %f", nrOfWrongPredictions/length(evaluationTestLabels))
