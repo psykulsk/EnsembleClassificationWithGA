@@ -47,6 +47,7 @@ classifiers <- vector("list", numberOfClassifiersInEnsemble)
 evaluate <- function(chromosome=c()) {
   ensemblePredictionResults <- matrix(data=NA, nrow=numberOfClassifiersInEnsemble, ncol=length(evaluationTestLabels))
   votingResults <- vector("integer", length = length(evaluationTestLabels))
+  confusionMatrix <- matrix(data=0, nrow=length(uniqueLabels), ncol=length(uniqueLabels))
   for(i in 1:numberOfClassifiersInEnsemble){
     startChromosomeIndex = (i-1)*numberOfTrainingDataPoints +1;
     endChromosomeIndex = startChromosomeIndex + numberOfTrainingDataPoints -1;
@@ -78,6 +79,7 @@ evaluate <- function(chromosome=c()) {
     # Bierzemy pierwszy element i uzywajac names() wyciagamy z niego etykiete
     votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
     #print(sort(table(ensemblePredictionResults[,i])))
+    confusionMatrix[evaluationTestLabels[i], votingResults[i]] <- confusionMatrix[evaluationTestLabels[i], votingResults[i]] + 1
   }
   
   nrOfCorrectPredictions = sum(votingResults == evaluationTestLabels)
@@ -93,12 +95,13 @@ monitor <- function(obj) {
 }
 
 # Generacja testowego chromosomu
-s = sample(rep(c(1),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDataPoints))
+#s = sample(rep(c(1),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDataPoints))
 # uruchomienie funkcji na testowym chromosomie
 #testresult = evaluate(s)
 
-GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 50, mutationChance = 0.01, 
+GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 1, mutationChance = 0.01, 
                    elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE, showSettings = TRUE)
+
 # Wybranie najlepszego chromosomu
 bestChromosome <- GAmodel$population[which.min(GAmodel$evaluations),]
 # Budowa klasyfikatorów na jego podstawie
@@ -106,6 +109,7 @@ evaluate(bestChromosome)
 # Ocena otrzymanej grupy klasyfikatórów zbiorze testowym
 ensemblePredictionResults <- matrix(data=NA, nrow=numberOfClassifiersInEnsemble, ncol=length(finalEvalTestLabels))
 votingResults <- vector("integer", length = length(finalEvalTestLabels))
+confusionMatrix <- matrix(data=0, nrow=length(uniqueLabels), ncol=length(uniqueLabels))
 for(i in 1:numberOfClassifiersInEnsemble){
   ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=finalEvalDataSet)
 }
@@ -115,6 +119,7 @@ for(i in 1:length(finalEvalTestLabels)){
   # Bierzemy pierwszy element i uzywajac names() wyciagamy z niego etykiete
   votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
   #print(sort(table(ensemblePredictionResults[,i])))
+  confusionMatrix[finalEvalTestLabels[i], votingResults[i]] <- confusionMatrix[finalEvalTestLabels[i], votingResults[i]] + 1
 }
 
 nrOfCorrectPredictions = sum(votingResults == finalEvalTestLabels)
