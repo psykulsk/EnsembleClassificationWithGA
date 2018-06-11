@@ -31,9 +31,10 @@ uniqueLabels = levels(trainingDataSet$Species)
 finalEvalDataSet = testDataSet[,1:4]
 finalEvalTestLabels = as.integer(testDataSet$Species)
 
-numberOfDecisionTreesInEnsemble = 6
-numberOfSVMInEnsemble = 4
-numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble
+numberOfDecisionTreesInEnsemble = 1
+numberOfSVMInEnsemble = 1
+numberOfNaiveBayesInEnsemble = 1
+numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble + numberOfNaiveBayesInEnsemble
 numberOfTrainingDataPoints = length(evaluationTestLabels)
 # Dla kazdego punktu trenujacego tworzymy liste, w ktorej pola odpowiadaja klasyfikatorom i okreslaja
 # czy dany klasyfikator uzywa 
@@ -41,7 +42,8 @@ sizeOfChromosome = numberOfClassifiersInEnsemble*numberOfTrainingDataPoints
 
 # "1" identify decision tree classifier and "2" SVM 
 # creation of table containing classifier types ID in ensemble
-classifierTypes <- c(rep(1, length.out = numberOfDecisionTreesInEnsemble), rep(2, length.out = numberOfSVMInEnsemble))
+classifierTypes <- c(rep(1, length.out = numberOfDecisionTreesInEnsemble), rep(2, length.out = numberOfSVMInEnsemble),
+                     rep(3, length.out = numberOfNaiveBayesInEnsemble))
 
 #Stworzenie pustej listy dla klasyfikatorów
 classifiers <- vector("list", numberOfClassifiersInEnsemble)
@@ -55,7 +57,7 @@ evaluate <- function(chromosome=c()) {
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
     
     # Jezeli wektor jest jednolity co do klasy (zawiera przyklady jendej klasy) to pomijamy trening
-    if(all(diff(as.integer(trainingSubset$Species)) == 0)){
+    if(length(unique(as.integer(trainingSubset$Species))) <= 1){
     
       ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
     
@@ -69,8 +71,18 @@ evaluate <- function(chromosome=c()) {
       else if(classifierTypes[i] == 2){
         classifiers[[i]] <<- svm(dataSetFormula, data=trainingSubset)
       }
+      else if(classifierTypes[i] == 3){
+        classifiers[[i]] <<- naiveBayes(dataSetFormula, data=trainingSubset)
+      }
       # Predykcja na zbiorze ewaluacyjnym
-      ensemblePredictionResults[i,] <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
+      x <- predict(classifiers[[i]], newdata=evaluationTestDataSet)
+    ##  print(sum(chromosome[startChromosomeIndex:endChromosomeIndex]))
+   #   print(length(x))
+      if(length(x) == 0){
+        ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
+      }else{
+        ensemblePredictionResults[i,]  <- x
+      }
     }
   }
   # Głosowanie
@@ -96,11 +108,11 @@ monitor <- function(obj) {
 }
 
 # Generacja testowego chromosomu
-#s = sample(rep(c(1),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDataPoints))
-# uruchomienie funkcji na testowym chromosomie
-#testresult = evaluate(s)
+# s = sample(c(rep(c(1),length.out=3),rep(c(0),length.out=numberOfClassifiersInEnsemble*numberOfTrainingDataPoints-3)))
+# # uruchomienie funkcji na testowym chromosomie
+# testresult = evaluate(s)
 
-GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 5, mutationChance = 0.01, 
+GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 10, mutationChance = 0.1,
                    elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE, showSettings = TRUE)
 
 # Wybranie najlepszego chromosomu
