@@ -9,54 +9,33 @@ library(genalg)
 library(party)
 source("./createConfMatrixAndParams.R")
 
-# data("iris")
-# 
-# dataSet <- iris
-# 
-# dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
-# 
-# # utworzenie indeksow do rozdzialu danych trenujacych i testowych
-# # w chwili obecnej dane treningowe to 80% wszystkich danych
-# index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
-# 
-# # wybor danych treningowych i testowych
-# trainingDataSet = dataSet[index,]
-# testDataSet = dataSet[-index,]
-# 
-# # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-# evaluationTestDataSet = trainingDataSet[,1:4]
-# evaluationTestLabels = as.integer(trainingDataSet$Species)
-# uniqueLabels = levels(trainingDataSet$Species)
-# 
-# finalEvalDataSet = testDataSet[,1:4]
-# finalEvalTestLabels = as.integer(testDataSet$Species)
-
 titanicTrainDataSet <- read.csv("train.csv")
 
 dataSet <- cbind(titanicTrainDataSet[,1:5],titanicTrainDataSet[,7:12])
 
 #dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
-dataSetFormula <- as.formula("Survived ~ Pclass + Sex + SibSp + Parch + Ticket + Fare + Cabin + Embarked")
+dataSetFormula <- as.formula("Survived ~ Pclass + Sex + SibSp + Parch + Fare + Embarked")
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
 index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
-
+# Zwiekszamy o 1, zeby klasy byly 1 i 2, poniewaz potem confusionMatrix jest tym indeksowane
+dataSet$Survived <- dataSet$Survived + 1
 # wybor danych treningowych i testowych
 trainingDataSet = dataSet[index,]
 testDataSet = dataSet[-index,]
 
 # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-evaluationTestDataSet = trainingDataSet[,1:11]
-evaluationTestLabels = as.integer(trainingDataSet$Survived)
-uniqueLabels = levels(trainingDataSet$Survived)
+evaluationTestDataSet <- trainingDataSet[,1:11]
+evaluationTestLabels <- as.integer(trainingDataSet$Survived)
+uniqueLabels = unique(trainingDataSet$Survived)
 
 finalEvalDataSet = trainingDataSet
 finalEvalTestLabels = as.integer(trainingDataSet$Survived)
 
-numberOfDecisionTreesInEnsemble = 1
-numberOfSVMInEnsemble = 1
-numberOfNaiveBayesInEnsemble = 1
+numberOfDecisionTreesInEnsemble = 5
+numberOfSVMInEnsemble = 5
+numberOfNaiveBayesInEnsemble = 5
 numberOfClassifiersInEnsemble = numberOfDecisionTreesInEnsemble + numberOfSVMInEnsemble + numberOfNaiveBayesInEnsemble
 numberOfTrainingDataPoints = length(evaluationTestLabels)
 # Dla kazdego punktu trenujacego tworzymy liste, w ktorej pola odpowiadaja klasyfikatorom i okreslaja
@@ -80,9 +59,10 @@ evaluate <- function(chromosome=c()) {
     trainingSubset <- trainingDataSet[which(chromosome[startChromosomeIndex:endChromosomeIndex]==1),]
     
     # Jezeli wektor jest jednolity co do klasy (zawiera przyklady jendej klasy) to pomijamy trening
-    if(length(unique(as.integer(trainingSubset$Species))) <= 1){
-    
-      ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
+    if(length(unique(as.integer(trainingSubset$Survived))) <= 1){
+      
+        ensemblePredictionResults[i,] <- rep(NA, length.out = numberOfTrainingDataPoints)
+
     
     }
     else{
@@ -112,13 +92,8 @@ evaluate <- function(chromosome=c()) {
   for(i in 1:length(evaluationTestLabels)){
     # sort(table(ensemblePredictionResults[,i]), decreasing = TRUE) zwraca po kolei najczescie wystepujace elementy
     # Bierzemy pierwszy element i uzywajac names() wyciagamy z niego etykiete
-    if(sum(is.na(ensemblePredictionResults)) != length(ensemblePredictionResults)){
       votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
-    }
-    else{
-      #Decyzja wymijająca
-    #  votingResults[i] = length(uniqueLabels) + 1;
-    }
+
     #print(sort(table(ensemblePredictionResults[,i])))
   }
   
@@ -127,7 +102,7 @@ evaluate <- function(chromosome=c()) {
   
   confMatrixResult = createConfMatrixAndParams(predicted = votingResults, actual = evaluationTestLabels, length(uniqueLabels) )
   
-  return(1-confMatrixResult$macroF1)
+  return(1-confMatrixResult[["macroF1"]])
 }
 
 monitor <- function(obj) {
@@ -141,7 +116,9 @@ monitor <- function(obj) {
 # # uruchomienie funkcji na testowym chromosomie
 # testresult = evaluate(s)
 
-GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 100, iters = 10, mutationChance = 0.1,
+#sug <-   t(replicate(c(rep(1, length.out = sizeOfChromosome)), n=10))
+
+GAmodel <- rbga.bin(size = sizeOfChromosome, popSize = 10, iters = 50, mutationChance = 0.1,
                    elitism = T, evalFunc = evaluate, monitorFunc = monitor, verbose = TRUE, showSettings = TRUE)
 
 # Wybranie najlepszego chromosomu
