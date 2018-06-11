@@ -9,12 +9,14 @@ library(genalg)
 library(party)
 source("./createConfMatrixAndParams.R")
 
-titanicTrainDataSet <- read.csv("train.csv")
+titanicTrainDataSet <- read.csv("titanic.csv")
 
 dataSet <- cbind(titanicTrainDataSet[,1:5],titanicTrainDataSet[,7:12])
 
-#dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
 dataSetFormula <- as.formula("Survived ~ Pclass + Sex + SibSp + Parch + Fare + Embarked")
+
+# dla powtarzalnego wyboru danych
+set.seed(2018)
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych

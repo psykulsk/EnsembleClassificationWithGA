@@ -15,6 +15,9 @@ dataSet <- iris
 
 dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
 
+# dla powtarzalnego wyboru danych
+set.seed(2018)
+
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
 index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
