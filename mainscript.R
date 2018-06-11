@@ -9,11 +9,34 @@ library(genalg)
 library(party)
 source("./createConfMatrixAndParams.R")
 
-data("iris")
+# data("iris")
+# 
+# dataSet <- iris
+# 
+# dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+# 
+# # utworzenie indeksow do rozdzialu danych trenujacych i testowych
+# # w chwili obecnej dane treningowe to 80% wszystkich danych
+# index <- sort(sample(1:nrow(dataSet),round(0.8*nrow(dataSet))))
+# 
+# # wybor danych treningowych i testowych
+# trainingDataSet = dataSet[index,]
+# testDataSet = dataSet[-index,]
+# 
+# # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
+# evaluationTestDataSet = trainingDataSet[,1:4]
+# evaluationTestLabels = as.integer(trainingDataSet$Species)
+# uniqueLabels = levels(trainingDataSet$Species)
+# 
+# finalEvalDataSet = testDataSet[,1:4]
+# finalEvalTestLabels = as.integer(testDataSet$Species)
 
-dataSet <- iris
+titanicTrainDataSet <- read.csv("train.csv")
 
-dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+dataSet <- cbind(titanicTrainDataSet[,1:5],titanicTrainDataSet[,7:12])
+
+#dataSetFormula <- as.formula("Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width")
+dataSetFormula <- as.formula("Survived ~ Pclass + Sex + SibSp + Parch + Ticket + Fare + Cabin + Embarked")
 
 # utworzenie indeksow do rozdzialu danych trenujacych i testowych
 # w chwili obecnej dane treningowe to 80% wszystkich danych
@@ -24,12 +47,12 @@ trainingDataSet = dataSet[index,]
 testDataSet = dataSet[-index,]
 
 # Zbior do ewaluacji wewnatrz algorytmu ewolucyjnego, bez etykiet
-evaluationTestDataSet = trainingDataSet[,1:4]
-evaluationTestLabels = as.integer(trainingDataSet$Species)
-uniqueLabels = levels(trainingDataSet$Species)
+evaluationTestDataSet = trainingDataSet[,1:11]
+evaluationTestLabels = as.integer(trainingDataSet$Survived)
+uniqueLabels = levels(trainingDataSet$Survived)
 
-finalEvalDataSet = testDataSet[,1:4]
-finalEvalTestLabels = as.integer(testDataSet$Species)
+finalEvalDataSet = trainingDataSet
+finalEvalTestLabels = as.integer(trainingDataSet$Survived)
 
 numberOfDecisionTreesInEnsemble = 1
 numberOfSVMInEnsemble = 1
@@ -89,7 +112,13 @@ evaluate <- function(chromosome=c()) {
   for(i in 1:length(evaluationTestLabels)){
     # sort(table(ensemblePredictionResults[,i]), decreasing = TRUE) zwraca po kolei najczescie wystepujace elementy
     # Bierzemy pierwszy element i uzywajac names() wyciagamy z niego etykiete
-    votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
+    if(sum(is.na(ensemblePredictionResults)) != length(ensemblePredictionResults)){
+      votingResults[i] = as.integer(names(sort(table(ensemblePredictionResults[,i]), decreasing = TRUE))[1])
+    }
+    else{
+      #Decyzja wymijająca
+    #  votingResults[i] = length(uniqueLabels) + 1;
+    }
     #print(sort(table(ensemblePredictionResults[,i])))
   }
   
