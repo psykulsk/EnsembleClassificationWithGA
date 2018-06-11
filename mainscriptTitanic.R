@@ -32,8 +32,8 @@ evaluationTestDataSet <- trainingDataSet[,1:11]
 evaluationTestLabels <- as.integer(trainingDataSet$Survived)
 uniqueLabels = unique(trainingDataSet$Survived)
 
-finalEvalDataSet = trainingDataSet
-finalEvalTestLabels = as.integer(trainingDataSet$Survived)
+finalEvalDataSet = testDataSet
+finalEvalTestLabels = as.integer(testDataSet$Survived)
 
 numberOfDecisionTreesInEnsemble = 5
 numberOfSVMInEnsemble = 5
